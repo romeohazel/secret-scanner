@@ -13,8 +13,28 @@ def redact(secret):
     return secret[:4] + "*" * (len(secret) - 8) + secret[-4:]
 
 
+def _deduplicate(findings):
+    """Collapse findings sharing the same (file, line, match) — first one wins.
+
+    Different rules sometimes fire on the same secret at the same location
+    (e.g. a regex rule and the generic entropy heuristic both flag a token
+    assignment). The composite key preserves real signal: the same secret
+    in two different files, or on two different lines, is still reported.
+    """
+    seen = set()
+    unique = []
+    for finding in findings:
+        key = (finding["file"], finding["line"], finding["match"])
+        if key not in seen:
+            seen.add(key)
+            unique.append(finding)
+    return unique
+
+
 def print_report(findings):
     """Group findings by file and print a human-readable report to stdout."""
+    findings = _deduplicate(findings)
+
     if not findings:
         print("No secrets found.")
         return
