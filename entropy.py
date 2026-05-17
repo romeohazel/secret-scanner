@@ -22,12 +22,13 @@ SECRET_KEYWORDS = (
     "credential",
 )
 
-# Matches assignments like `password = "xyz"` or `API_KEY: 'xyz'`.
-# Group 1 captures the variable name; group 2 captures the quoted value.
+# Matches assignments like `password = "xyz"`, `API_KEY: 'xyz'`, and
+# unquoted env-style `SECRET=xyz`. Group 1 captures the variable name;
+# group 2 captures the value when quoted; group 3 captures it when bare.
 _ASSIGNMENT_RE = re.compile(
     r"(\w*(?:" + "|".join(SECRET_KEYWORDS) + r")\w*)"
     r"\s*[:=]\s*"
-    r"['\"]([^'\"]+)['\"]",
+    r"(?:['\"]([^'\"]+)['\"]|(\S+))",
     re.IGNORECASE,
 )
 
@@ -51,7 +52,7 @@ def scan_line(line):
     """Return (rule_name, matched_text) tuples for any generic secrets on `line`."""
     findings = []
     for match in _ASSIGNMENT_RE.finditer(line):
-        value = match.group(2)
+        value = match.group(2) or match.group(3)
         if len(value) >= MIN_SECRET_LENGTH and shannon_entropy(value) > ENTROPY_THRESHOLD:
             findings.append(("Generic High-Entropy Secret", value))
     return findings
