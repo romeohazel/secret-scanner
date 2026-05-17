@@ -5,6 +5,7 @@ tokens, private keys, and generic high-entropy strings assigned to suspiciously
 named variables. Everything it prints is redacted.
 
 dont use this git leaks is better
+idk python
 
 ## Install
 
